@@ -5,7 +5,7 @@ endif
 
 SCRIPT := script/DeployUSDC.s.sol:USDCScript
 
-.PHONY: deploy-all deploy-sepolia deploy-arbitrum-sepolia deploy-optimism-sepolia deploy-base-sepolia deploy-zksync-sepolia mint-one check-key
+.PHONY: deploy-all deploy-sepolia deploy-arbitrum-sepolia deploy-base-sepolia mint-one check-key
 
 define deploy
 	@if [ -z "$(2)" ]; then \
@@ -22,7 +22,7 @@ check-key:
 		exit 1; \
 	fi
 
-deploy-all: check-key deploy-sepolia deploy-arbitrum-sepolia deploy-optimism-sepolia deploy-base-sepolia deploy-zksync-sepolia
+deploy-all: check-key deploy-sepolia deploy-arbitrum-sepolia deploy-base-sepolia 
 
 deploy-sepolia: check-key
 	$(call deploy,Ethereum Sepolia,$(SEPOLIA_RPC_URL))
@@ -30,11 +30,11 @@ deploy-sepolia: check-key
 deploy-arbitrum-sepolia: check-key
 	$(call deploy,Arbitrum Sepolia,$(ARBITRUM_SEPOLIA_RPC_URL))
 
-deploy-optimism-sepolia: check-key
-	$(call deploy,Optimism Sepolia,$(OPTIMISM_SEPOLIA_RPC_URL))
+deploy-base-sepolia: check-key
+	$(call deploy,Base Sepolia,$(BASE_SEPOLIA_RPC_URL))
 
-# deploy-base-sepolia: check-key
-# 	$(call deploy,Base Sepolia,$(BASE_SEPOLIA_RPC_URL))
+# deploy-optimism-sepolia: check-key
+# 	$(call deploy,Optimism Sepolia,$(OPTIMISM_SEPOLIA_RPC_URL))
 
 # deploy-zksync-sepolia: check-key
 # 	$(call deploy,zkSync Sepolia,$(ZKSYNC_SEPOLIA_RPC_URL),--zksync)
