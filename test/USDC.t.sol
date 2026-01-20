@@ -13,13 +13,13 @@ contract USDCTest is Test {
         token = new USDC();
     }
 
-    function test_Metadata() public {
+    function test_Metadata() public view {
         assertEq(token.decimals(), 6);
         assertEq(token.name(), "USD Coin");
         assertEq(token.symbol(), "USDC");
     }
 
-    function test_InitialSupply() public {
+    function test_InitialSupply() public view {
         uint256 expectedSupply = 1_000_000_000 * 10 ** 6;
         assertEq(token.totalSupply(), expectedSupply);
         assertEq(token.balanceOf(address(this)), expectedSupply);

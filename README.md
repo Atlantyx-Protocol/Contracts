@@ -45,22 +45,62 @@ $ forge snapshot
 $ anvil
 ```
 
-### Deploy
+### Deploy USDC
+
+Deploy the mock USDC (6 decimals, 1e9 initial supply) to a single network:
 
 ```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+PRIVATE_KEY=<pk> forge script script/DeployUSDC.s.sol:USDCScript --rpc-url <rpc_url> --broadcast
 ```
 
-### Cast
+Deploy to all Sepolia networks at once (Sepolia, Arbitrum/Optimism/Base/zkSync Sepolia):
+
+Create a `.env` file with your configuration:
 
 ```shell
-$ cast <subcommand>
+PRIVATE_KEY=0x...
+SEPOLIA_RPC_URL=https://...
+ARBITRUM_SEPOLIA_RPC_URL=https://...
+OPTIMISM_SEPOLIA_RPC_URL=https://...
+BASE_SEPOLIA_RPC_URL=https://...
+ZKSYNC_SEPOLIA_RPC_URL=https://...
 ```
 
-### Help
+Then run:
 
 ```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+make deploy-all
+```
+
+The Makefile automatically loads variables from `.env` if it exists.
+
+### Mint USDC (single address)
+
+Mint to one address (amount in raw units; USDC uses 6 decimals) via Makefile with `.env`:
+
+Create a `.env` file with your configuration:
+
+```shell
+USDC=0xYourToken
+RECIPIENT=0xRecipient
+AMOUNT=1000000        # 1 USDC (6 decimals)
+RPC_URL=https://...
+PRIVATE_KEY=0x...
+```
+
+Then run:
+
+```shell
+make mint-one
+```
+
+The Makefile automatically loads variables from `.env` if it exists.
+
+### Mint USDC (multiple addresses)
+
+Mint the same amount to multiple addresses (comma-separated recipients):
+
+```shell
+USDC=<token_address> RECIPIENTS=<addr1,addr2> AMOUNT=<amount> \
+forge script script/MintUSDC.s.sol:MintUSDCScript --rpc-url <rpc_url> --broadcast --private-key <pk>
 ```
