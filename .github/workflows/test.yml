@@ -22,6 +22,12 @@ jobs:
       - name: Show Forge version
         run: forge --version
 
+      - name: Cache Foundry deps
+        uses: actions/cache@v4
+        with:
+          path: lib
+          key: ${{ runner.os }}-forge-${{ hashFiles('foundry.toml') }}
+
       - name: Install Foundry dependencies
         run: forge install
 
