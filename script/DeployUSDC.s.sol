@@ -2,18 +2,14 @@
 pragma solidity ^0.8.13;
 
 import {Script} from "forge-std/Script.sol";
-import {Counter} from "../src/Counter.sol";
+import {USDC} from "../src/USDC.sol";
 
-contract CounterScript is Script {
-    Counter public counter;
-
-    function setUp() public {}
+contract USDCScript is Script {
+    USDC public token;
 
     function run() public {
         vm.startBroadcast();
-
-        counter = new Counter();
-
+        token = new USDC();
         vm.stopBroadcast();
     }
 }
