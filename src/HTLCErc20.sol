@@ -31,10 +31,10 @@ contract HashedTimelockERC20 is ReentrancyGuard {
         address indexed sender,
         address indexed receiver,
         address token,
-        uint256 amount,          // actual amount received & locked
+        uint256 amount,
         bytes32 hashlock,
         uint256 timelock,
-        uint64  nonce
+        uint64 nonce
     );
 
     event HTLCWithdraw(bytes32 indexed id, bytes32 preimage);
@@ -42,8 +42,8 @@ contract HashedTimelockERC20 is ReentrancyGuard {
 
     // ---------- Types ----------
     enum Status {
-        NONE,     // default for non-existing
-        OPEN,     // created and locked
+        NONE,
+        OPEN,
         WITHDRAWN,
         REFUNDED
     }
@@ -52,19 +52,19 @@ contract HashedTimelockERC20 is ReentrancyGuard {
         address sender;
         address receiver;
         address token;
-        uint256 amount;     // actual locked amount (post-fee if fee-on-transfer)
-        bytes32 hashlock;   // sha256(preimage)
-        uint256 timelock;   // unix seconds
+        uint256 amount; // actual locked amount (post-fee if fee-on-transfer)
+        bytes32 hashlock; // sha256(preimage)
+        uint256 timelock; // unix seconds
         Status status;
-        bytes32 preimage;   // set on withdraw
-        uint64 nonce;       // per-sender nonce used in id
+        bytes32 preimage; // set on withdraw
+        uint64 nonce; // per-sender nonce used in id
     }
 
     // ---------- Storage ----------
     mapping(bytes32 => LockContract) private _contracts;
     mapping(address => uint64) public nonces; // per-sender nonce
 
-    // Policy: if false, withdraw allowed even after timelock (as long as not refunded)
+    // If false, withdraw allowed even after timelock (as long as not refunded)
     bool public immutable allowWithdrawAfterExpiry;
 
     constructor(bool _allowWithdrawAfterExpiry) {
@@ -91,13 +91,11 @@ contract HashedTimelockERC20 is ReentrancyGuard {
      *
      * @return id unique contract id
      */
-    function newContract(
-        address receiver,
-        bytes32 hashlock,
-        uint256 timelock,
-        address token,
-        uint256 amount
-    ) external nonReentrant returns (bytes32 id) {
+    function newContract(address receiver, bytes32 hashlock, uint256 timelock, address token, uint256 amount)
+        external
+        nonReentrant
+        returns (bytes32 id)
+    {
         if (receiver == address(0) || token == address(0)) revert ZeroAddress();
         if (amount == 0) revert AmountZero();
         if (timelock <= block.timestamp) revert TimelockNotFuture();
