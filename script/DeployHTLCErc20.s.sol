@@ -7,7 +7,7 @@ import {HashedTimelockERC20} from "../src/HTLCErc20.sol";
 // Deploys a HashedTimelockERC20 with a configurable expiry policy.
 contract DeployHTLCErc20 is Script {
     function run() public returns (HashedTimelockERC20 htlc) {
-        bool allowWithdrawAfterExpiry = vm.envBool("ALLOW_WITHDRAW_AFTER_EXPIRY");
+        bool allowWithdrawAfterExpiry = false;
 
         vm.startBroadcast();
         htlc = new HashedTimelockERC20(allowWithdrawAfterExpiry);
