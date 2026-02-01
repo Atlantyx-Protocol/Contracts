@@ -9,9 +9,12 @@ HTLC_NEW_SCRIPT := script/NewHTLCErc20.s.sol:NewHTLCErc20
 HTLC_WITHDRAW_SCRIPT := script/WithdrawHTLCErc20.s.sol:WithdrawHTLCErc20
 HTLC_REFUND_SCRIPT := script/RefundHTLCErc20.s.sol:RefundHTLCErc20
 
-.PHONY: deploy-all deploy-sepolia deploy-arbitrum-sepolia deploy-base-sepolia mint-one check-key
+.PHONY: deploy-all deploy-sepolia deploy-arbitrum-sepolia deploy-base-sepolia check-key
 .PHONY: deploy-htlc deploy-htlc-sepolia deploy-htlc-arbitrum-sepolia deploy-htlc-base-sepolia
-.PHONY: htlc-new htlc-withdraw htlc-refund
+.PHONY: htlc-new htlc-new-sepolia htlc-new-arbitrum-sepolia htlc-new-base-sepolia
+.PHONY: htlc-withdraw htlc-withdraw-sepolia htlc-withdraw-arbitrum-sepolia htlc-withdraw-base-sepolia
+.PHONY: htlc-refund htlc-refund-sepolia htlc-refund-arbitrum-sepolia htlc-refund-base-sepolia
+.PHONY: mint-one mint-sepolia mint-arbitrum-sepolia mint-base-sepolia
 
 define deploy_usdc
 	@if [ -z "$(2)" ]; then \
@@ -72,12 +75,54 @@ htlc-new: check-key
 	fi
 	HTLC=$(HTLC) RECEIVER=$(RECEIVER) HASHLOCK=$(HASHLOCK) TIMELOCK=$(TIMELOCK) TOKEN=$(TOKEN) AMOUNT=$(AMOUNT) forge script $(HTLC_NEW_SCRIPT) --rpc-url $(RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
 
+htlc-new-sepolia: check-key
+	@if [ -z "$(RECEIVER)" ] || [ -z "$(HASHLOCK)" ] || [ -z "$(TIMELOCK)" ] || [ -z "$(AMOUNT)" ]; then \
+		echo "RECEIVER, HASHLOCK, TIMELOCK, and AMOUNT are required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_SEPOLIA) RECEIVER=$(RECEIVER) HASHLOCK=$(HASHLOCK) TIMELOCK=$(TIMELOCK) TOKEN=$(USDC_ADDRESS_SEPOLIA) AMOUNT=$(AMOUNT) forge script $(HTLC_NEW_SCRIPT) --rpc-url $(SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-new-arbitrum-sepolia: check-key
+	@if [ -z "$(RECEIVER)" ] || [ -z "$(HASHLOCK)" ] || [ -z "$(TIMELOCK)" ] || [ -z "$(AMOUNT)" ]; then \
+		echo "RECEIVER, HASHLOCK, TIMELOCK, and AMOUNT are required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_ARBITRUM_SEPOLIA) RECEIVER=$(RECEIVER) HASHLOCK=$(HASHLOCK) TIMELOCK=$(TIMELOCK) TOKEN=$(USDC_ADDRESS_ARBITRIM_SEPOLOA) AMOUNT=$(AMOUNT) forge script $(HTLC_NEW_SCRIPT) --rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-new-base-sepolia: check-key
+	@if [ -z "$(RECEIVER)" ] || [ -z "$(HASHLOCK)" ] || [ -z "$(TIMELOCK)" ] || [ -z "$(AMOUNT)" ]; then \
+		echo "RECEIVER, HASHLOCK, TIMELOCK, and AMOUNT are required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_BASE_SEPOLIA) RECEIVER=$(RECEIVER) HASHLOCK=$(HASHLOCK) TIMELOCK=$(TIMELOCK) TOKEN=$(USDC_ADDRESS_BASE_SEPOLOA) AMOUNT=$(AMOUNT) forge script $(HTLC_NEW_SCRIPT) --rpc-url $(BASE_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
 htlc-withdraw: check-key
 	@if [ -z "$(HTLC)" ] || [ -z "$(ID)" ] || [ -z "$(PREIMAGE)" ] || [ -z "$(RPC_URL)" ]; then \
 		echo "HTLC, ID, PREIMAGE, and RPC_URL are required"; \
 		exit 1; \
 	fi
 	HTLC=$(HTLC) ID=$(ID) PREIMAGE=$(PREIMAGE) forge script $(HTLC_WITHDRAW_SCRIPT) --rpc-url $(RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-withdraw-sepolia: check-key
+	@if [ -z "$(ID)" ] || [ -z "$(PREIMAGE)" ]; then \
+		echo "ID and PREIMAGE are required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_SEPOLIA) ID=$(ID) PREIMAGE=$(PREIMAGE) forge script $(HTLC_WITHDRAW_SCRIPT) --rpc-url $(SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-withdraw-arbitrum-sepolia: check-key
+	@if [ -z "$(ID)" ] || [ -z "$(PREIMAGE)" ]; then \
+		echo "ID and PREIMAGE are required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_ARBITRUM_SEPOLIA) ID=$(ID) PREIMAGE=$(PREIMAGE) forge script $(HTLC_WITHDRAW_SCRIPT) --rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-withdraw-base-sepolia: check-key
+	@if [ -z "$(ID)" ] || [ -z "$(PREIMAGE)" ]; then \
+		echo "ID and PREIMAGE are required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_BASE_SEPOLIA) ID=$(ID) PREIMAGE=$(PREIMAGE) forge script $(HTLC_WITHDRAW_SCRIPT) --rpc-url $(BASE_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
 
 htlc-refund: check-key
 	@if [ -z "$(HTLC)" ] || [ -z "$(ID)" ] || [ -z "$(RPC_URL)" ]; then \
@@ -86,9 +131,51 @@ htlc-refund: check-key
 	fi
 	HTLC=$(HTLC) ID=$(ID) forge script $(HTLC_REFUND_SCRIPT) --rpc-url $(RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
 
-mint-one: check-key
-	@if [ -z "$(USDC)" ] || [ -z "$(RECIPIENT)" ] || [ -z "$(AMOUNT)" ] || [ -z "$(RPC_URL)" ]; then \
-		echo "USDC, RECIPIENT, AMOUNT, and RPC_URL are required"; \
+htlc-refund-sepolia: check-key
+	@if [ -z "$(ID)" ]; then \
+		echo "ID is required"; \
 		exit 1; \
 	fi
-	forge script script/MintSingleUSDC.s.sol:MintSingleUSDC --rpc-url $(RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+	HTLC=$(HTLC_ADDRESS_SEPOLIA) ID=$(ID) forge script $(HTLC_REFUND_SCRIPT) --rpc-url $(SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-refund-arbitrum-sepolia: check-key
+	@if [ -z "$(ID)" ]; then \
+		echo "ID is required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_ARBITRUM_SEPOLIA) ID=$(ID) forge script $(HTLC_REFUND_SCRIPT) --rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-refund-base-sepolia: check-key
+	@if [ -z "$(ID)" ]; then \
+		echo "ID is required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_BASE_SEPOLIA) ID=$(ID) forge script $(HTLC_REFUND_SCRIPT) --rpc-url $(BASE_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+mint-one: check-key
+	@if [ -z "$(USDC)" ] || [ -z "$(RECIPIENTS)" ] || [ -z "$(AMOUNT)" ] || [ -z "$(RPC_URL)" ]; then \
+		echo "USDC, RECIPIENTS, AMOUNT, and RPC_URL are required"; \
+		exit 1; \
+	fi
+	USDC=$(USDC) RECIPIENTS=$(RECIPIENTS) AMOUNT=$(AMOUNT) forge script script/MintUSDC.s.sol:MintUSDCScript --rpc-url $(RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+mint-sepolia: check-key
+	@if [ -z "$(RECIPIENTS)" ] || [ -z "$(AMOUNT)" ]; then \
+		echo "RECIPIENTS and AMOUNT are required"; \
+		exit 1; \
+	fi
+	USDC=$(USDC_ADDRESS_SEPOLIA) RECIPIENTS=$(RECIPIENTS) AMOUNT=$(AMOUNT) forge script script/MintUSDC.s.sol:MintUSDCScript --rpc-url $(SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+mint-arbitrum-sepolia: check-key
+	@if [ -z "$(RECIPIENTS)" ] || [ -z "$(AMOUNT)" ]; then \
+		echo "RECIPIENTS and AMOUNT are required"; \
+		exit 1; \
+	fi
+	USDC=$(USDC_ADDRESS_ARBITRIM_SEPOLOA) RECIPIENTS=$(RECIPIENTS) AMOUNT=$(AMOUNT) forge script script/MintUSDC.s.sol:MintUSDCScript --rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+mint-base-sepolia: check-key
+	@if [ -z "$(RECIPIENTS)" ] || [ -z "$(AMOUNT)" ]; then \
+		echo "RECIPIENTS and AMOUNT are required"; \
+		exit 1; \
+	fi
+	USDC=$(USDC_ADDRESS_BASE_SEPOLOA) RECIPIENTS=$(RECIPIENTS) AMOUNT=$(AMOUNT) forge script script/MintUSDC.s.sol:MintUSDCScript --rpc-url $(BASE_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
