@@ -21,7 +21,7 @@ define deploy_usdc
 		echo "Skipping $(1) (missing RPC URL)"; \
 	else \
 		echo "Deploying USDC to $(1)"; \
-		forge script $(USDC_SCRIPT) --rpc-url $(2) --broadcast --private-key $(PRIVATE_KEY) $(3); \
+		forge script $(USDC_SCRIPT) --rpc-url $(2) --broadcast --private-key $(PRIVATE_KEY) --verify --etherscan-api-key $(ETHERSCAN_API) $(3); \
 	fi
 endef
 
@@ -55,7 +55,7 @@ define deploy_htlc
 		echo "Skipping $(1) HTLC (missing RPC URL)"; \
 	else \
 		echo "Deploying HTLC to $(1)"; \
-		forge script $(HTLC_SCRIPT) --rpc-url $(2) --broadcast --private-key $(PRIVATE_KEY) $(3); \
+		forge script $(HTLC_SCRIPT) --rpc-url $(2) --broadcast --private-key $(PRIVATE_KEY) --verify --etherscan-api-key $(ETHERSCAN_API) $(3); \
 	fi
 endef
 
@@ -97,60 +97,60 @@ htlc-new-base-sepolia: check-key
 	HTLC=$(HTLC_ADDRESS_BASE_SEPOLIA) RECEIVER=$(RECEIVER) HASHLOCK=$(HASHLOCK) TIMELOCK=$(TIMELOCK) TOKEN=$(USDC_ADDRESS_BASE_SEPOLOA) AMOUNT=$(AMOUNT) forge script $(HTLC_NEW_SCRIPT) --rpc-url $(BASE_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
 
 htlc-withdraw: check-key
-	@if [ -z "$(HTLC)" ] || [ -z "$(ID)" ] || [ -z "$(PREIMAGE)" ] || [ -z "$(RPC_URL)" ]; then \
-		echo "HTLC, ID, PREIMAGE, and RPC_URL are required"; \
+	@if [ -z "$(HTLC)" ] || [ -z "$(ORDER_ID)" ] || [ -z "$(FILL_ID)" ] || [ -z "$(PREIMAGE)" ] || [ -z "$(RPC_URL)" ]; then \
+		echo "HTLC, ORDER_ID, FILL_ID, PREIMAGE, and RPC_URL are required"; \
 		exit 1; \
 	fi
-	HTLC=$(HTLC) ID=$(ID) PREIMAGE=$(PREIMAGE) forge script $(HTLC_WITHDRAW_SCRIPT) --rpc-url $(RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+	HTLC=$(HTLC) ORDER_ID=$(ORDER_ID) FILL_ID=$(FILL_ID) PREIMAGE=$(PREIMAGE) forge script $(HTLC_WITHDRAW_SCRIPT) --rpc-url $(RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
 
 htlc-withdraw-sepolia: check-key
-	@if [ -z "$(ID)" ] || [ -z "$(PREIMAGE)" ]; then \
-		echo "ID and PREIMAGE are required"; \
+	@if [ -z "$(ORDER_ID)" ] || [ -z "$(FILL_ID)" ] || [ -z "$(PREIMAGE)" ]; then \
+		echo "ORDER_ID, FILL_ID, and PREIMAGE are required"; \
 		exit 1; \
 	fi
-	HTLC=$(HTLC_ADDRESS_SEPOLIA) ID=$(ID) PREIMAGE=$(PREIMAGE) forge script $(HTLC_WITHDRAW_SCRIPT) --rpc-url $(SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+	HTLC=$(HTLC_ADDRESS_SEPOLIA) ORDER_ID=$(ORDER_ID) FILL_ID=$(FILL_ID) PREIMAGE=$(PREIMAGE) forge script $(HTLC_WITHDRAW_SCRIPT) --rpc-url $(SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
 
 htlc-withdraw-arbitrum-sepolia: check-key
-	@if [ -z "$(ID)" ] || [ -z "$(PREIMAGE)" ]; then \
-		echo "ID and PREIMAGE are required"; \
+	@if [ -z "$(ORDER_ID)" ] || [ -z "$(FILL_ID)" ] || [ -z "$(PREIMAGE)" ]; then \
+		echo "ORDER_ID, FILL_ID, and PREIMAGE are required"; \
 		exit 1; \
 	fi
-	HTLC=$(HTLC_ADDRESS_ARBITRUM_SEPOLIA) ID=$(ID) PREIMAGE=$(PREIMAGE) forge script $(HTLC_WITHDRAW_SCRIPT) --rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+	HTLC=$(HTLC_ADDRESS_ARBITRUM_SEPOLIA) ORDER_ID=$(ORDER_ID) FILL_ID=$(FILL_ID) PREIMAGE=$(PREIMAGE) forge script $(HTLC_WITHDRAW_SCRIPT) --rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
 
 htlc-withdraw-base-sepolia: check-key
-	@if [ -z "$(ID)" ] || [ -z "$(PREIMAGE)" ]; then \
-		echo "ID and PREIMAGE are required"; \
+	@if [ -z "$(ORDER_ID)" ] || [ -z "$(FILL_ID)" ] || [ -z "$(PREIMAGE)" ]; then \
+		echo "ORDER_ID, FILL_ID, and PREIMAGE are required"; \
 		exit 1; \
 	fi
-	HTLC=$(HTLC_ADDRESS_BASE_SEPOLIA) ID=$(ID) PREIMAGE=$(PREIMAGE) forge script $(HTLC_WITHDRAW_SCRIPT) --rpc-url $(BASE_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+	HTLC=$(HTLC_ADDRESS_BASE_SEPOLIA) ORDER_ID=$(ORDER_ID) FILL_ID=$(FILL_ID) PREIMAGE=$(PREIMAGE) forge script $(HTLC_WITHDRAW_SCRIPT) --rpc-url $(BASE_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
 
 htlc-refund: check-key
-	@if [ -z "$(HTLC)" ] || [ -z "$(ID)" ] || [ -z "$(RPC_URL)" ]; then \
-		echo "HTLC, ID, and RPC_URL are required"; \
+	@if [ -z "$(HTLC)" ] || [ -z "$(ORDER_ID)" ] || [ -z "$(RPC_URL)" ]; then \
+		echo "HTLC, ORDER_ID, and RPC_URL are required"; \
 		exit 1; \
 	fi
-	HTLC=$(HTLC) ID=$(ID) forge script $(HTLC_REFUND_SCRIPT) --rpc-url $(RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+	HTLC=$(HTLC) ORDER_ID=$(ORDER_ID) forge script $(HTLC_REFUND_SCRIPT) --rpc-url $(RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
 
 htlc-refund-sepolia: check-key
-	@if [ -z "$(ID)" ]; then \
-		echo "ID is required"; \
+	@if [ -z "$(ORDER_ID)" ]; then \
+		echo "ORDER_ID is required"; \
 		exit 1; \
 	fi
-	HTLC=$(HTLC_ADDRESS_SEPOLIA) ID=$(ID) forge script $(HTLC_REFUND_SCRIPT) --rpc-url $(SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+	HTLC=$(HTLC_ADDRESS_SEPOLIA) ORDER_ID=$(ORDER_ID) forge script $(HTLC_REFUND_SCRIPT) --rpc-url $(SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
 
 htlc-refund-arbitrum-sepolia: check-key
-	@if [ -z "$(ID)" ]; then \
-		echo "ID is required"; \
+	@if [ -z "$(ORDER_ID)" ]; then \
+		echo "ORDER_ID is required"; \
 		exit 1; \
 	fi
-	HTLC=$(HTLC_ADDRESS_ARBITRUM_SEPOLIA) ID=$(ID) forge script $(HTLC_REFUND_SCRIPT) --rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+	HTLC=$(HTLC_ADDRESS_ARBITRUM_SEPOLIA) ORDER_ID=$(ORDER_ID) forge script $(HTLC_REFUND_SCRIPT) --rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
 
 htlc-refund-base-sepolia: check-key
-	@if [ -z "$(ID)" ]; then \
-		echo "ID is required"; \
+	@if [ -z "$(ORDER_ID)" ]; then \
+		echo "ORDER_ID is required"; \
 		exit 1; \
 	fi
-	HTLC=$(HTLC_ADDRESS_BASE_SEPOLIA) ID=$(ID) forge script $(HTLC_REFUND_SCRIPT) --rpc-url $(BASE_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+	HTLC=$(HTLC_ADDRESS_BASE_SEPOLIA) ORDER_ID=$(ORDER_ID) forge script $(HTLC_REFUND_SCRIPT) --rpc-url $(BASE_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
 
 mint-one: check-key
 	@if [ -z "$(USDC)" ] || [ -z "$(RECIPIENTS)" ] || [ -z "$(AMOUNT)" ] || [ -z "$(RPC_URL)" ]; then \
