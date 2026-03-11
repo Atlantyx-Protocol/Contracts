@@ -16,7 +16,7 @@ HTLC_REMOVE_ADMIN_SCRIPT := script/RemoveAdminHTLCErc20.s.sol:RemoveAdminHTLCErc
 .PHONY: htlc-new htlc-new-sepolia htlc-new-arbitrum-sepolia htlc-new-base-sepolia
 .PHONY: htlc-withdraw htlc-withdraw-sepolia htlc-withdraw-arbitrum-sepolia htlc-withdraw-base-sepolia
 .PHONY: htlc-refund htlc-refund-sepolia htlc-refund-arbitrum-sepolia htlc-refund-base-sepolia
-.PHONY: htlc-add-admin htlc-add-admin-sepolia htlc-add-admin-arbitrum-sepolia htlc-add-admin-base-sepolia
+.PHONY: htlc-add-admin htlc-add-admin-all htlc-add-admin-sepolia htlc-add-admin-arbitrum-sepolia htlc-add-admin-base-sepolia
 .PHONY: htlc-remove-admin htlc-remove-admin-sepolia htlc-remove-admin-arbitrum-sepolia htlc-remove-admin-base-sepolia
 .PHONY: mint-one mint-sepolia mint-arbitrum-sepolia mint-base-sepolia
 
@@ -183,6 +183,15 @@ htlc-add-admin-base-sepolia: check-key
 		exit 1; \
 	fi
 	HTLC=$(HTLC_ADDRESS_BASE_SEPOLIA) ADMIN=$(ADMIN) forge script $(HTLC_ADD_ADMIN_SCRIPT) --rpc-url $(BASE_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-add-admin-all: check-key
+	@if [ -z "$(ADMIN)" ]; then \
+		echo "ADMIN is required"; \
+		exit 1; \
+	fi
+	$(MAKE) htlc-add-admin-sepolia ADMIN=$(ADMIN)
+	$(MAKE) htlc-add-admin-arbitrum-sepolia ADMIN=$(ADMIN)
+	$(MAKE) htlc-add-admin-base-sepolia ADMIN=$(ADMIN)
 
 htlc-remove-admin: check-key
 	@if [ -z "$(HTLC)" ] || [ -z "$(ADMIN)" ] || [ -z "$(RPC_URL)" ]; then \
