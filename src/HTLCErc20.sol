@@ -221,7 +221,7 @@ contract HashedTimelockERC20 is ReentrancyGuard {
         Order storage order = _orders[orderId];
 
         if (order.status != OrderStatus.OPEN) revert NotOpen();
-        if (msg.sender != order.sender) revert NotSender();
+        if (msg.sender != order.sender && !admins[msg.sender]) revert NotSender();
         if (block.timestamp < order.timelock) revert TimelockNotExpired();
 
         uint256 refundAmount = order.remainingAmount;

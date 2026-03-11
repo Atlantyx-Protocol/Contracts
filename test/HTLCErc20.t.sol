@@ -786,4 +786,45 @@ contract HashedTimelockERC20Test is Test {
         vm.expectRevert(HashedTimelockERC20.NotReceiver.selector);
         htlcStrict.withdraw(orderId, 0, PREIMAGE1);
     }
+
+    function test_AdminCanRefundOnBehalfOfUser() public {
+        htlcStrict.addAdmin(admin);
+
+        uint256 amount = 1_000 * ONE_TOKEN;
+        uint256 timelock = block.timestamp + 1 days;
+
+        (uint256 orderId,) = _createSingleFillOrder(htlcStrict, receiver1, amount, timelock, PREIMAGE1);
+
+        vm.warp(timelock + 1);
+
+        uint256 senderBalBefore = token.balanceOf(sender);
+
+        vm.expectEmit(true, true, true, true, address(htlcStrict));
+        emit HashedTimelockERC20.OrderRefunded(orderId, amount);
+
+        // Admin calls refund; tokens still go to the order's sender
+        vm.prank(admin);
+        htlcStrict.refund(orderId);
+
+        HashedTimelockERC20.Order memory order = htlcStrict.getOrder(orderId);
+        assertEq(uint8(order.status), uint8(HashedTimelockERC20.OrderStatus.REFUNDED));
+        assertEq(order.remainingAmount, 0);
+        assertEq(token.balanceOf(sender), senderBalBefore + amount);
+    }
+
+    function test_RemovedAdminCanNoLongerRefund() public {
+        htlcStrict.addAdmin(admin);
+        htlcStrict.removeAdmin(admin);
+
+        uint256 amount = 1_000 * ONE_TOKEN;
+        uint256 timelock = block.timestamp + 1 days;
+
+        (uint256 orderId,) = _createSingleFillOrder(htlcStrict, receiver1, amount, timelock, PREIMAGE1);
+
+        vm.warp(timelock + 1);
+
+        vm.prank(admin);
+        vm.expectRevert(HashedTimelockERC20.NotSender.selector);
+        htlcStrict.refund(orderId);
+    }
 }
