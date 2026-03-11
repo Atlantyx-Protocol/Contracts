@@ -36,7 +36,8 @@ contract NewHTLCErc20 is Script {
                 timelock: timelock,
                 receivers: receivers,
                 amounts: amounts,
-                hashlocks: hashlocks
+                hashlocks: hashlocks,
+                onBehalfOf: address(0)
             })
         );
         vm.stopBroadcast();

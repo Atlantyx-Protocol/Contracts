@@ -68,7 +68,8 @@ contract HashedTimelockERC20Test is Test {
                 timelock: timelock,
                 receivers: receivers,
                 amounts: amounts,
-                hashlocks: hashlocks
+                hashlocks: hashlocks,
+                onBehalfOf: address(0)
             })
         );
 
@@ -134,7 +135,8 @@ contract HashedTimelockERC20Test is Test {
                 timelock: timelock,
                 receivers: receivers,
                 amounts: amounts,
-                hashlocks: hashlocks
+                hashlocks: hashlocks,
+                onBehalfOf: address(0)
             })
         );
 
@@ -147,7 +149,8 @@ contract HashedTimelockERC20Test is Test {
                 timelock: timelock,
                 receivers: receivers,
                 amounts: amounts,
-                hashlocks: hashlocks
+                hashlocks: hashlocks,
+                onBehalfOf: address(0)
             })
         );
 
@@ -160,7 +163,8 @@ contract HashedTimelockERC20Test is Test {
                 timelock: block.timestamp,
                 receivers: receivers,
                 amounts: amounts,
-                hashlocks: hashlocks
+                hashlocks: hashlocks,
+                onBehalfOf: address(0)
             })
         );
 
@@ -176,7 +180,8 @@ contract HashedTimelockERC20Test is Test {
                 timelock: timelock,
                 receivers: badReceivers,
                 amounts: amounts,
-                hashlocks: hashlocks
+                hashlocks: hashlocks,
+                onBehalfOf: address(0)
             })
         );
 
@@ -192,7 +197,8 @@ contract HashedTimelockERC20Test is Test {
                 timelock: timelock,
                 receivers: receivers,
                 amounts: badAmounts,
-                hashlocks: hashlocks
+                hashlocks: hashlocks,
+                onBehalfOf: address(0)
             })
         );
 
@@ -205,7 +211,8 @@ contract HashedTimelockERC20Test is Test {
                 timelock: timelock,
                 receivers: new address[](0),
                 amounts: new uint256[](0),
-                hashlocks: new bytes32[](0)
+                hashlocks: new bytes32[](0),
+                onBehalfOf: address(0)
             })
         );
 
@@ -222,7 +229,8 @@ contract HashedTimelockERC20Test is Test {
                 timelock: timelock,
                 receivers: receivers, // length 1
                 amounts: twoAmounts, // length 2
-                hashlocks: hashlocks // length 1
+                hashlocks: hashlocks, // length 1
+                onBehalfOf: address(0)
             })
         );
     }
@@ -255,7 +263,8 @@ contract HashedTimelockERC20Test is Test {
                 timelock: timelock,
                 receivers: receivers,
                 amounts: amounts,
-                hashlocks: hashlocks
+                hashlocks: hashlocks,
+                onBehalfOf: address(0)
             })
         );
     }
@@ -576,7 +585,8 @@ contract HashedTimelockERC20Test is Test {
                 timelock: timelock,
                 receivers: receivers,
                 amounts: amounts,
-                hashlocks: hashlocks
+                hashlocks: hashlocks,
+                onBehalfOf: address(0)
             })
         );
 
@@ -613,7 +623,8 @@ contract HashedTimelockERC20Test is Test {
                 timelock: timelock,
                 receivers: receivers,
                 amounts: amounts,
-                hashlocks: hashlocks
+                hashlocks: hashlocks,
+                onBehalfOf: address(0)
             })
         );
 
@@ -623,5 +634,156 @@ contract HashedTimelockERC20Test is Test {
 
     function _hashlock(bytes32 preimage) internal pure returns (bytes32) {
         return sha256(abi.encodePacked(preimage));
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────────
+    // ADMIN TESTS
+    // ──────────────────────────────────────────────────────────────────────────────
+
+    address private admin = makeAddr("admin");
+
+    function test_AddAdminOnlyOwner() public {
+        // Non-owner cannot add admin
+        vm.prank(stranger);
+        vm.expectRevert(HashedTimelockERC20.NotOwner.selector);
+        htlcStrict.addAdmin(admin);
+
+        // Owner can add admin
+        vm.expectEmit(true, false, false, false, address(htlcStrict));
+        emit HashedTimelockERC20.AdminAdded(admin);
+
+        htlcStrict.addAdmin(admin);
+        assertTrue(htlcStrict.admins(admin));
+    }
+
+    function test_AddAdminZeroAddressReverts() public {
+        vm.expectRevert(HashedTimelockERC20.ZeroAddress.selector);
+        htlcStrict.addAdmin(address(0));
+    }
+
+    function test_RemoveAdminOnlyOwner() public {
+        htlcStrict.addAdmin(admin);
+
+        // Non-owner cannot remove admin
+        vm.prank(stranger);
+        vm.expectRevert(HashedTimelockERC20.NotOwner.selector);
+        htlcStrict.removeAdmin(admin);
+
+        // Owner can remove admin
+        vm.expectEmit(true, false, false, false, address(htlcStrict));
+        emit HashedTimelockERC20.AdminRemoved(admin);
+
+        htlcStrict.removeAdmin(admin);
+        assertFalse(htlcStrict.admins(admin));
+    }
+
+    function test_AdminCanCreateOrderOnBehalfOfUser() public {
+        htlcStrict.addAdmin(admin);
+
+        uint256 amount = 1_000 * ONE_TOKEN;
+        uint256 timelock = block.timestamp + 1 days;
+
+        address[] memory receivers = new address[](1);
+        receivers[0] = receiver1;
+
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = amount;
+
+        bytes32[] memory hashlocks = new bytes32[](1);
+        hashlocks[0] = _hashlock(PREIMAGE1);
+
+        // sender approves the contract for the admin to pull from
+        vm.prank(sender);
+        token.approve(address(htlcStrict), amount);
+
+        vm.prank(admin);
+        uint256 orderId = htlcStrict.newOrder(
+            HashedTimelockERC20.NewOrderParams({
+                token: address(token),
+                totalAmount: amount,
+                timelock: timelock,
+                receivers: receivers,
+                amounts: amounts,
+                hashlocks: hashlocks,
+                onBehalfOf: sender
+            })
+        );
+
+        HashedTimelockERC20.Order memory order = htlcStrict.getOrder(orderId);
+        // Order sender is the user, not the admin
+        assertEq(order.sender, sender);
+        assertEq(order.totalAmount, amount);
+    }
+
+    function test_NonAdminCannotCreateOrderOnBehalfOfUser() public {
+        uint256 amount = 1_000 * ONE_TOKEN;
+        uint256 timelock = block.timestamp + 1 days;
+
+        address[] memory receivers = new address[](1);
+        receivers[0] = receiver1;
+
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = amount;
+
+        bytes32[] memory hashlocks = new bytes32[](1);
+        hashlocks[0] = _hashlock(PREIMAGE1);
+
+        vm.prank(stranger);
+        vm.expectRevert(HashedTimelockERC20.NotAdmin.selector);
+        htlcStrict.newOrder(
+            HashedTimelockERC20.NewOrderParams({
+                token: address(token),
+                totalAmount: amount,
+                timelock: timelock,
+                receivers: receivers,
+                amounts: amounts,
+                hashlocks: hashlocks,
+                onBehalfOf: sender
+            })
+        );
+    }
+
+    function test_AdminCanWithdrawOnBehalfOfReceiver() public {
+        htlcStrict.addAdmin(admin);
+
+        uint256 amount = 1_000 * ONE_TOKEN;
+        uint256 timelock = block.timestamp + 1 days;
+
+        (uint256 orderId,) = _createSingleFillOrder(htlcStrict, receiver1, amount, timelock, PREIMAGE1);
+
+        uint256 receiverBalBefore = token.balanceOf(receiver1);
+
+        // Admin calls withdraw; tokens still go to receiver1
+        vm.prank(admin);
+        htlcStrict.withdraw(orderId, 0, PREIMAGE1);
+
+        HashedTimelockERC20.Fill memory fill = htlcStrict.getFill(orderId, 0);
+        assertTrue(fill.claimed);
+        assertEq(token.balanceOf(receiver1), receiverBalBefore + amount);
+    }
+
+    function test_NonAdminStrangerCannotWithdraw() public {
+        uint256 amount = 1_000 * ONE_TOKEN;
+        uint256 timelock = block.timestamp + 1 days;
+
+        (uint256 orderId,) = _createSingleFillOrder(htlcStrict, receiver1, amount, timelock, PREIMAGE1);
+
+        vm.prank(stranger);
+        vm.expectRevert(HashedTimelockERC20.NotReceiver.selector);
+        htlcStrict.withdraw(orderId, 0, PREIMAGE1);
+    }
+
+    function test_RemovedAdminCanNoLongerWithdraw() public {
+        htlcStrict.addAdmin(admin);
+        htlcStrict.removeAdmin(admin);
+
+        uint256 amount = 1_000 * ONE_TOKEN;
+        uint256 timelock = block.timestamp + 1 days;
+
+        (uint256 orderId,) = _createSingleFillOrder(htlcStrict, receiver1, amount, timelock, PREIMAGE1);
+
+        vm.prank(admin);
+        vm.expectRevert(HashedTimelockERC20.NotReceiver.selector);
+        htlcStrict.withdraw(orderId, 0, PREIMAGE1);
     }
 }

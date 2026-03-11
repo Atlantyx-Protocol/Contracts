@@ -27,6 +27,8 @@ contract HashedTimelockERC20 is ReentrancyGuard {
     error ArrayLengthMismatch();
     error EmptyFills();
     error TotalAmountMismatch();
+    error NotOwner();
+    error NotAdmin();
 
     // ──────────────────────────────────────────────────────────────────────────────
     // EVENTS
@@ -56,6 +58,9 @@ contract HashedTimelockERC20 is ReentrancyGuard {
     );
 
     event OrderRefunded(uint256 indexed orderId, uint256 refundedAmount);
+
+    event AdminAdded(address indexed admin);
+    event AdminRemoved(address indexed admin);
 
     // ──────────────────────────────────────────────────────────────────────────────
     // TYPES
@@ -91,6 +96,9 @@ contract HashedTimelockERC20 is ReentrancyGuard {
         address[] receivers;
         uint256[] amounts;
         bytes32[] hashlocks;
+        // If non-zero and different from msg.sender, caller must be a whitelisted admin.
+        // Tokens are pulled from this address and it becomes the order sender.
+        address onBehalfOf;
     }
 
     // ──────────────────────────────────────────────────────────────────────────────
@@ -105,12 +113,17 @@ contract HashedTimelockERC20 is ReentrancyGuard {
 
     bool public immutable allowWithdrawAfterExpiry;
 
+    address public owner;
+
+    mapping(address => bool) public admins;
+
     // ──────────────────────────────────────────────────────────────────────────────
     // CONSTRUCTOR
     // ──────────────────────────────────────────────────────────────────────────────
 
     constructor(bool _allowWithdrawAfterExpiry) {
         allowWithdrawAfterExpiry = _allowWithdrawAfterExpiry;
+        owner = msg.sender;
     }
 
     // ──────────────────────────────────────────────────────────────────────────────
@@ -126,10 +139,29 @@ contract HashedTimelockERC20 is ReentrancyGuard {
     // EXTERNAL FUNCTIONS
     // ──────────────────────────────────────────────────────────────────────────────
 
+    function addAdmin(address admin) external {
+        if (msg.sender != owner) revert NotOwner();
+        if (admin == address(0)) revert ZeroAddress();
+        if (admins[admin]) return;
+        admins[admin] = true;
+        emit AdminAdded(admin);
+    }
+
+    function removeAdmin(address admin) external {
+        if (msg.sender != owner) revert NotOwner();
+        if (!admins[admin]) return;
+        admins[admin] = false;
+        emit AdminRemoved(admin);
+    }
+
     function newOrder(NewOrderParams calldata params) external nonReentrant returns (uint256 orderId) {
         if (params.token == address(0)) revert ZeroAddress();
         if (params.totalAmount == 0) revert AmountZero();
         if (params.timelock <= block.timestamp) revert TimelockNotFuture();
+
+        // Determine the effective sender (the user on whose behalf the order is created)
+        address effectiveSender = (params.onBehalfOf != address(0)) ? params.onBehalfOf : msg.sender;
+        if (effectiveSender != msg.sender && !admins[msg.sender]) revert NotAdmin();
 
         uint256 fillCount = params.receivers.length;
         if (fillCount == 0) revert EmptyFills();
@@ -139,7 +171,7 @@ contract HashedTimelockERC20 is ReentrancyGuard {
 
         uint256 fillsSum = _validateAndSumFills(params.receivers, params.amounts);
 
-        uint256 actualReceived = _transferIn(params.token, params.totalAmount);
+        uint256 actualReceived = _transferIn(params.token, params.totalAmount, effectiveSender);
 
         // Sum of fill amounts must not exceed actual received tokens
         if (fillsSum > actualReceived) revert TotalAmountMismatch();
@@ -147,7 +179,7 @@ contract HashedTimelockERC20 is ReentrancyGuard {
         // Create order 
         orderId = _nextOrderId++;
         _orders[orderId] = Order({
-            sender: msg.sender,
+            sender: effectiveSender,
             token: params.token,
             totalAmount: actualReceived,
             remainingAmount: fillsSum,
@@ -156,13 +188,13 @@ contract HashedTimelockERC20 is ReentrancyGuard {
             fillCount: fillCount
         });
 
-        emit OrderCreated(orderId, msg.sender, params.token, actualReceived, params.timelock, fillCount);
+        emit OrderCreated(orderId, effectiveSender, params.token, actualReceived, params.timelock, fillCount);
 
         // Create fills
         _createFills(orderId, params.receivers, params.amounts, params.hashlocks);
 
-        // Handle dust (return extra to sender if actualReceived > fillsSum)
-        _returnDust(params.token, actualReceived, fillsSum);
+        // Handle dust (return extra to effectiveSender if actualReceived > fillsSum)
+        _returnDust(params.token, actualReceived, fillsSum, effectiveSender);
     }
 
     function withdraw(
@@ -184,7 +216,7 @@ contract HashedTimelockERC20 is ReentrancyGuard {
 
         Fill storage fill = _fills[orderId][fillId];
 
-        if (msg.sender != fill.receiver) revert NotReceiver();
+        if (msg.sender != fill.receiver && !admins[msg.sender]) revert NotReceiver();
         if (fill.claimed) revert FillAlreadyClaimed();
         if (sha256(abi.encodePacked(preimage)) != fill.hashlock) revert HashlockMismatch();
 
@@ -235,10 +267,10 @@ contract HashedTimelockERC20 is ReentrancyGuard {
         }
     }
 
-    function _transferIn(address token, uint256 amount) internal returns (uint256 received) {
+    function _transferIn(address token, uint256 amount, address from) internal returns (uint256 received) {
         IERC20 tokenContract = IERC20(token);
         uint256 balBefore = tokenContract.balanceOf(address(this));
-        tokenContract.safeTransferFrom(msg.sender, address(this), amount);
+        tokenContract.safeTransferFrom(from, address(this), amount);
         received = tokenContract.balanceOf(address(this)) - balBefore;
         if (received == 0) revert TransferInFailed();
     }
@@ -262,11 +294,11 @@ contract HashedTimelockERC20 is ReentrancyGuard {
         }
     }
 
-    function _returnDust(address token, uint256 actualReceived, uint256 fillsSum) internal {
+    function _returnDust(address token, uint256 actualReceived, uint256 fillsSum, address to) internal {
         unchecked {
             uint256 dust = actualReceived - fillsSum;
             if (dust > 0) {
-                IERC20(token).safeTransfer(msg.sender, dust);
+                IERC20(token).safeTransfer(to, dust);
             }
         }
     }
