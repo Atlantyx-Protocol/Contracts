@@ -43,19 +43,10 @@ contract HashedTimelockERC20 is ReentrancyGuard {
     );
 
     event FillCreated(
-        uint256 indexed orderId,
-        uint256 indexed fillId,
-        address indexed receiver,
-        uint256 amount,
-        bytes32 hashlock
+        uint256 indexed orderId, uint256 indexed fillId, address indexed receiver, uint256 amount, bytes32 hashlock
     );
 
-    event FillWithdrawn(
-        uint256 indexed orderId,
-        uint256 indexed fillId,
-        address indexed receiver,
-        bytes32 preimage
-    );
+    event FillWithdrawn(uint256 indexed orderId, uint256 indexed fillId, address indexed receiver, bytes32 preimage);
 
     event OrderRefunded(uint256 indexed orderId, uint256 refundedAmount);
 
@@ -76,7 +67,7 @@ contract HashedTimelockERC20 is ReentrancyGuard {
         address sender;
         address token;
         uint256 totalAmount;
-        uint256 remainingAmount;  
+        uint256 remainingAmount;
         uint256 timelock;
         OrderStatus status;
         uint256 fillCount;
@@ -176,7 +167,7 @@ contract HashedTimelockERC20 is ReentrancyGuard {
         // Sum of fill amounts must not exceed actual received tokens
         if (fillsSum > actualReceived) revert TotalAmountMismatch();
 
-        // Create order 
+        // Create order
         orderId = _nextOrderId++;
         _orders[orderId] = Order({
             sender: effectiveSender,
@@ -197,11 +188,7 @@ contract HashedTimelockERC20 is ReentrancyGuard {
         _returnDust(params.token, actualReceived, fillsSum, effectiveSender);
     }
 
-    function withdraw(
-        uint256 orderId,
-        uint256 fillId,
-        bytes32 preimage
-    ) external nonReentrant orderExists(orderId) {
+    function withdraw(uint256 orderId, uint256 fillId, bytes32 preimage) external nonReentrant orderExists(orderId) {
         Order storage order = _orders[orderId];
 
         // Order validations
@@ -255,10 +242,11 @@ contract HashedTimelockERC20 is ReentrancyGuard {
     // INTERNAL FUNCTIONS
     // ──────────────────────────────────────────────────────────────────────────────
 
-    function _validateAndSumFills(
-        address[] calldata receivers,
-        uint256[] calldata amounts
-    ) internal pure returns (uint256 fillsSum) {
+    function _validateAndSumFills(address[] calldata receivers, uint256[] calldata amounts)
+        internal
+        pure
+        returns (uint256 fillsSum)
+    {
         uint256 len = receivers.length;
         for (uint256 i = 0; i < len; ++i) {
             if (receivers[i] == address(0)) revert ZeroAddress();
@@ -283,12 +271,8 @@ contract HashedTimelockERC20 is ReentrancyGuard {
     ) internal {
         uint256 len = receivers.length;
         for (uint256 i = 0; i < len; ++i) {
-            _fills[orderId][i] = Fill({
-                receiver: receivers[i],
-                amount: amounts[i],
-                hashlock: hashlocks[i],
-                claimed: false
-            });
+            _fills[orderId][i] =
+                Fill({receiver: receivers[i], amount: amounts[i], hashlock: hashlocks[i], claimed: false});
 
             emit FillCreated(orderId, i, receivers[i], amounts[i], hashlocks[i]);
         }
