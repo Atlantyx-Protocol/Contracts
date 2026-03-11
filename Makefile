@@ -8,12 +8,16 @@ HTLC_SCRIPT := script/DeployHTLCErc20.s.sol:DeployHTLCErc20
 HTLC_NEW_SCRIPT := script/NewHTLCErc20.s.sol:NewHTLCErc20
 HTLC_WITHDRAW_SCRIPT := script/WithdrawHTLCErc20.s.sol:WithdrawHTLCErc20
 HTLC_REFUND_SCRIPT := script/RefundHTLCErc20.s.sol:RefundHTLCErc20
+HTLC_ADD_ADMIN_SCRIPT := script/AddAdminHTLCErc20.s.sol:AddAdminHTLCErc20
+HTLC_REMOVE_ADMIN_SCRIPT := script/RemoveAdminHTLCErc20.s.sol:RemoveAdminHTLCErc20
 
 .PHONY: deploy-all deploy-sepolia deploy-arbitrum-sepolia deploy-base-sepolia check-key
 .PHONY: deploy-htlc deploy-htlc-sepolia deploy-htlc-arbitrum-sepolia deploy-htlc-base-sepolia
 .PHONY: htlc-new htlc-new-sepolia htlc-new-arbitrum-sepolia htlc-new-base-sepolia
 .PHONY: htlc-withdraw htlc-withdraw-sepolia htlc-withdraw-arbitrum-sepolia htlc-withdraw-base-sepolia
 .PHONY: htlc-refund htlc-refund-sepolia htlc-refund-arbitrum-sepolia htlc-refund-base-sepolia
+.PHONY: htlc-add-admin htlc-add-admin-sepolia htlc-add-admin-arbitrum-sepolia htlc-add-admin-base-sepolia
+.PHONY: htlc-remove-admin htlc-remove-admin-sepolia htlc-remove-admin-arbitrum-sepolia htlc-remove-admin-base-sepolia
 .PHONY: mint-one mint-sepolia mint-arbitrum-sepolia mint-base-sepolia
 
 define deploy_usdc
@@ -151,6 +155,62 @@ htlc-refund-base-sepolia: check-key
 		exit 1; \
 	fi
 	HTLC=$(HTLC_ADDRESS_BASE_SEPOLIA) ORDER_ID=$(ORDER_ID) forge script $(HTLC_REFUND_SCRIPT) --rpc-url $(BASE_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-add-admin: check-key
+	@if [ -z "$(HTLC)" ] || [ -z "$(ADMIN)" ] || [ -z "$(RPC_URL)" ]; then \
+		echo "HTLC, ADMIN, and RPC_URL are required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC) ADMIN=$(ADMIN) forge script $(HTLC_ADD_ADMIN_SCRIPT) --rpc-url $(RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-add-admin-sepolia: check-key
+	@if [ -z "$(ADMIN)" ]; then \
+		echo "ADMIN is required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_SEPOLIA) ADMIN=$(ADMIN) forge script $(HTLC_ADD_ADMIN_SCRIPT) --rpc-url $(SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-add-admin-arbitrum-sepolia: check-key
+	@if [ -z "$(ADMIN)" ]; then \
+		echo "ADMIN is required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_ARBITRUM_SEPOLIA) ADMIN=$(ADMIN) forge script $(HTLC_ADD_ADMIN_SCRIPT) --rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-add-admin-base-sepolia: check-key
+	@if [ -z "$(ADMIN)" ]; then \
+		echo "ADMIN is required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_BASE_SEPOLIA) ADMIN=$(ADMIN) forge script $(HTLC_ADD_ADMIN_SCRIPT) --rpc-url $(BASE_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-remove-admin: check-key
+	@if [ -z "$(HTLC)" ] || [ -z "$(ADMIN)" ] || [ -z "$(RPC_URL)" ]; then \
+		echo "HTLC, ADMIN, and RPC_URL are required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC) ADMIN=$(ADMIN) forge script $(HTLC_REMOVE_ADMIN_SCRIPT) --rpc-url $(RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-remove-admin-sepolia: check-key
+	@if [ -z "$(ADMIN)" ]; then \
+		echo "ADMIN is required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_SEPOLIA) ADMIN=$(ADMIN) forge script $(HTLC_REMOVE_ADMIN_SCRIPT) --rpc-url $(SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-remove-admin-arbitrum-sepolia: check-key
+	@if [ -z "$(ADMIN)" ]; then \
+		echo "ADMIN is required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_ARBITRUM_SEPOLIA) ADMIN=$(ADMIN) forge script $(HTLC_REMOVE_ADMIN_SCRIPT) --rpc-url $(ARBITRUM_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
+
+htlc-remove-admin-base-sepolia: check-key
+	@if [ -z "$(ADMIN)" ]; then \
+		echo "ADMIN is required"; \
+		exit 1; \
+	fi
+	HTLC=$(HTLC_ADDRESS_BASE_SEPOLIA) ADMIN=$(ADMIN) forge script $(HTLC_REMOVE_ADMIN_SCRIPT) --rpc-url $(BASE_SEPOLIA_RPC_URL) --broadcast --private-key $(PRIVATE_KEY)
 
 mint-one: check-key
 	@if [ -z "$(USDC)" ] || [ -z "$(RECIPIENTS)" ] || [ -z "$(AMOUNT)" ] || [ -z "$(RPC_URL)" ]; then \
